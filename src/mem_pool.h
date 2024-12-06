@@ -1,6 +1,8 @@
 #ifndef MEM_POOL_H
 #define MEM_POOL_H
 
+#define _GNU_SOURCE
+
 #include <sys/mman.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -28,5 +30,7 @@ void pool_drain(MemPool *pool);
 void pool_destroy(MemPool *pool);
 
 size_t pool_measure(MemPool *pool);
+
+MemPool *pool_resize(MemPool *pool, size_t size);
 
 #endif

@@ -155,6 +155,41 @@ void test_stress()
     TEST_END("stress conditions");
 }
 
+void test_pool_reresize()
+{
+    TEST_START("pool reresize");
+
+    size_t initial_size = 1024;
+    MemPool *pool = pool_build(initial_size);
+    assert(pool != NULL);
+
+    size_t new_size = 8192;
+    size_t old_size = pool->size;
+    MemPool *expanded = pool_resize(pool, new_size);
+    assert(expanded != NULL);
+    assert(expanded->size > old_size);
+
+    size_t smaller_size = 2048;
+    old_size = expanded->size;
+    MemPool *shrunk = pool_resize(expanded, smaller_size);
+    assert(shrunk != NULL);
+    assert(shrunk->size < old_size);
+
+    MemPool *same = pool_resize(shrunk, shrunk->size);
+    assert(same == shrunk);
+
+    assert(pool_resize(NULL, 1024) == NULL);
+    assert(pool_resize(shrunk, 0) == NULL);
+
+    int *num = pool_fill(shrunk, sizeof(int));
+    *num = 42;
+    MemPool *after_data = pool_resize(shrunk, 4096);
+    assert(*(int *)((char *)after_data->base + sizeof(MemPool)) == 42);
+
+    pool_destroy(after_data);
+    TEST_END("pool reresize");
+}
+
 int main()
 {
     printf("Running memory pool tests...\n\n");
@@ -166,6 +201,7 @@ int main()
     test_pool_drain();
     test_edge_cases();
     test_stress();
+    test_pool_reresize();
 
     printf(GREEN "\nAll tests passed successfully!\n" RESET);
     return 0;

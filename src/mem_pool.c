@@ -87,3 +87,37 @@ size_t pool_measure(MemPool *pool)
 
     return pool->size - pool->head;
 }
+
+MemPool *pool_resize(MemPool *pool, size_t size)
+{
+    if (!pool || !pool->is_active || size == 0)
+    {
+        return NULL;
+    }
+
+    size_t aligned_size = (size + pool->page_size - 1) & ~(pool->page_size - 1);
+
+    if (aligned_size == pool->size)
+    {
+        return pool;
+    }
+
+    if (aligned_size < pool->size)
+    {
+        if (pool->head > aligned_size)
+        {
+            return NULL;
+        }
+    }
+
+    void *new_memory = mremap(pool->base, pool->size, aligned_size, MREMAP_MAYMOVE);
+    if (new_memory == MAP_FAILED)
+    {
+        return NULL;
+    }
+
+    MemPool *new_pool = (MemPool *)new_memory;
+    new_pool->base = new_memory;
+    new_pool->size = aligned_size;
+    return new_pool;
+}
