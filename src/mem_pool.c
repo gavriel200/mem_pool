@@ -42,7 +42,7 @@ void *pool_fill(MemPool *pool, size_t size)
         return NULL;
     }
 
-    size_t aligned_size = (size + 7) & ~7;
+    size_t aligned_size = (size + ALIGNMENT_BYTES) & ~ALIGNMENT_BYTES;
 
     if (pool->head + aligned_size > pool->size)
     {

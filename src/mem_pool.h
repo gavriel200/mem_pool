@@ -6,6 +6,10 @@
 #include <stdbool.h>
 #include <unistd.h>
 
+#ifndef ALIGNMENT_BYTES
+#define ALIGNMENT_BYTES 7
+#endif
+
 typedef struct MemPool
 {
     void *base;       // Base pointer to the mapped memory region
