@@ -121,3 +121,32 @@ MemPool *pool_resize(MemPool *pool, size_t size)
     new_pool->size = aligned_size;
     return new_pool;
 }
+
+void pool_copy(MemPool *from, MemPool *to, PoolCopyMode mode)
+{
+
+    if (!from || !to || !from->is_active || !to->is_active)
+    {
+        return;
+    }
+
+    size_t data_size = from->head - sizeof(MemPool);
+
+    if (mode == POOL_COPY_OVERWRITE)
+    {
+        to->head = sizeof(MemPool);
+    }
+
+    size_t available = pool_measure(to);
+    if (data_size > available)
+    {
+        return;
+    }
+
+    char *src = (char *)from->base + sizeof(MemPool);
+    char *dst = (char *)to->base + to->head;
+
+    memcpy(dst, src, data_size);
+
+    to->head += data_size;
+}

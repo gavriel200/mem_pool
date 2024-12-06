@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <string.h>
 
 #ifndef ALIGNMENT_BYTES
 #define ALIGNMENT_BYTES 7
@@ -21,6 +22,12 @@ typedef struct MemPool
     size_t page_size; // System page size for alignment
 } MemPool;
 
+typedef enum
+{
+    POOL_COPY_OVERWRITE,
+    POOL_COPY_APPEND
+} PoolCopyMode;
+
 MemPool *pool_build(size_t size);
 
 void *pool_fill(MemPool *pool, size_t size);
@@ -32,5 +39,7 @@ void pool_destroy(MemPool *pool);
 size_t pool_measure(MemPool *pool);
 
 MemPool *pool_resize(MemPool *pool, size_t size);
+
+void pool_copy(MemPool *from, MemPool *to, PoolCopyMode mode);
 
 #endif

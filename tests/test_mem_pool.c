@@ -190,6 +190,39 @@ void test_pool_reresize()
     TEST_END("pool reresize");
 }
 
+void test_pool_copy()
+{
+    TEST_START("pool copy");
+
+    MemPool *source = pool_build(1024);
+    MemPool *dest = pool_build(1024);
+    assert(source != NULL && dest != NULL);
+
+    // Test overwrite mode
+    int *num1 = pool_fill(source, sizeof(int));
+    *num1 = 42;
+
+    int *dest_num = pool_fill(dest, sizeof(int));
+    *dest_num = 100;
+
+    pool_copy(source, dest, POOL_COPY_OVERWRITE);
+    assert(*(int *)((char *)dest->base + sizeof(MemPool)) == 42);
+
+    // Test append mode
+    MemPool *source2 = pool_build(1024);
+    int *num2 = pool_fill(source2, sizeof(int));
+    *num2 = 84;
+
+    pool_copy(source2, dest, POOL_COPY_APPEND);
+    int *second_num = (int *)((char *)dest->base + sizeof(MemPool) + sizeof(int) * 2);
+    assert(*second_num == 84);
+
+    pool_destroy(source);
+    pool_destroy(source2);
+    pool_destroy(dest);
+    TEST_END("pool copy");
+}
+
 int main()
 {
     printf("Running memory pool tests...\n\n");
@@ -202,6 +235,7 @@ int main()
     test_edge_cases();
     test_stress();
     test_pool_reresize();
+    test_pool_copy();
 
     printf(GREEN "\nAll tests passed successfully!\n" RESET);
     return 0;
