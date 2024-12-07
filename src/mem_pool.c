@@ -1,5 +1,10 @@
 #include "mem_pool.h"
 
+size_t aligne_size(size_t size, size_t alignement)
+{
+    return (size + alignement - 1) & ~(alignement - 1);
+}
+
 MemPool *pool_build(size_t size)
 {
     if (size == 0)
@@ -11,7 +16,7 @@ MemPool *pool_build(size_t size)
 
     size_t total_size = sizeof(MemPool) + size;
 
-    size_t aligned_size = (total_size + page_size - 1) & ~(page_size - 1);
+    size_t aligned_size = aligne_size(total_size, page_size);
 
     void *memory = mmap(NULL,                        // Let system choose address
                         aligned_size,                // Size rounded to page size
@@ -42,7 +47,7 @@ void *pool_fill(MemPool *pool, size_t size)
         return NULL;
     }
 
-    size_t aligned_size = (size + ALIGNMENT_BYTES) & ~ALIGNMENT_BYTES;
+    size_t aligned_size = aligne_size(size, ALIGNMENT_BYTES);
 
     if (pool->head + aligned_size > pool->size)
     {
@@ -95,7 +100,7 @@ MemPool *pool_resize(MemPool *pool, size_t size)
         return NULL;
     }
 
-    size_t aligned_size = (size + pool->page_size - 1) & ~(pool->page_size - 1);
+    size_t aligned_size = aligne_size(size, pool->page_size);
 
     if (aligned_size == pool->size)
     {

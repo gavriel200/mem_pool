@@ -10,7 +10,7 @@
 #include <string.h>
 
 #ifndef ALIGNMENT_BYTES
-#define ALIGNMENT_BYTES 7
+#define ALIGNMENT_BYTES 8
 #endif
 
 typedef struct MemPool
