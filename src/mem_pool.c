@@ -5,7 +5,11 @@ size_t aligne_size(size_t size, size_t alignement)
     return (size + alignement - 1) & ~(alignement - 1);
 }
 
+#ifdef DEBUG
+MemPool *pool_build_debug(size_t size, const char *file, int line)
+#else
 MemPool *pool_build(size_t size)
+#endif
 {
     if (size == 0)
     {
@@ -37,6 +41,15 @@ MemPool *pool_build(size_t size)
     pool->is_active = true;
     pool->page_size = page_size;
 
+#ifdef DEBUG
+    pool->total_allocations = 0;
+    pool->creation_time = time(NULL);
+    pool->creator_file = strdup(file);
+    pool->creator_line = line;
+    pool->failed_allocations = 0;
+    pool->total_bytes_requested = 0;
+#endif
+
     return pool;
 }
 
@@ -44,19 +57,39 @@ void *pool_fill(MemPool *pool, size_t size)
 {
     if (!pool || !pool->is_active || size == 0)
     {
+#ifdef DEBUG
+        if (pool && pool->is_active)
+        {
+            pool->failed_allocations++;
+        }
+#endif
         return NULL;
     }
+
+#ifdef DEBUG
+    pool->total_bytes_requested += size;
+#endif
 
     size_t aligned_size = aligne_size(size, ALIGNMENT_BYTES);
 
     if (pool->head + aligned_size > pool->size)
     {
+#ifdef DEBUG
+        pool->failed_allocations++;
+#endif
         return NULL;
     }
 
     void *ptr = (char *)pool->base + pool->head;
-
     pool->head += aligned_size;
+
+#ifdef DEBUG
+    pool->total_allocations++;
+    if (pool->head > pool->peak_usage)
+    {
+        pool->peak_usage = pool->head;
+    }
+#endif
 
     return ptr;
 }
@@ -155,3 +188,45 @@ void pool_copy(MemPool *from, MemPool *to, PoolCopyMode mode)
 
     to->head += data_size;
 }
+
+#ifdef DEBUG
+void pool_print_stats(const MemPool *pool)
+{
+    if (!pool || !pool->is_active)
+    {
+        printf("Invalid or inactive pool\n");
+        return;
+    }
+
+    printf("Memory Pool Statistics:\n");
+    printf("Created in: %s:%d\n", pool->creator_file, pool->creator_line);
+    printf("Creation time: %s", ctime(&pool->creation_time));
+    printf("Total size: %zu bytes\n", pool->size);
+    printf("Currently used: %zu bytes (%.2f%%)\n",
+           pool->head, (double)pool->head / pool->size * 100);
+    printf("Peak usage: %zu bytes (%.2f%%)\n",
+           pool->peak_usage, (double)pool->peak_usage / pool->size * 100);
+    printf("Total allocations: %zu\n", pool->total_allocations);
+    printf("Failed allocations: %zu\n", pool->failed_allocations);
+    printf("Average allocation size: %.2f bytes\n",
+           pool->total_allocations ? (double)pool->total_bytes_requested / pool->total_allocations : 0);
+}
+
+double pool_get_fragmentation(const MemPool *pool)
+{
+    if (!pool || !pool->is_active)
+    {
+        return 0.0;
+    }
+
+    size_t total_requested = pool->total_bytes_requested;
+    size_t total_allocated = pool->head - sizeof(MemPool);
+
+    return total_allocated > 0 ? (double)(total_allocated - total_requested) / total_allocated * 100 : 0;
+}
+
+size_t pool_get_peak_usage(const MemPool *pool)
+{
+    return pool && pool->is_active ? pool->peak_usage : 0;
+}
+#endif

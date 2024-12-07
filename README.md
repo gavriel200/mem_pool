@@ -53,7 +53,7 @@ make clean && make
 ## Technical Details
 
 - Uses POSIX mmap for memory allocation
-- 8-byte alignment for all allocations
+- deafult 8-byte alignment for all allocations
 - Page-size aligned pool creation
 - Thread-safe for separate pools
 - Zero-overhead for sequential allocations

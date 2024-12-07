@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Werror -g -I./src
+CFLAGS = -Wall -Wextra -Werror -DDEBUG -g -I./src
 
 SRC_DIR = src
 TEST_DIR = tests
